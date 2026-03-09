@@ -38,7 +38,6 @@ export interface GameState {
   roundStartTime: number;
   roundDuration: number; // in seconds
   revealChainIndex: number;
-  revealEntryIndex: number;
 }
 
 export interface PlayerAssignment {

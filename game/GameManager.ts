@@ -87,23 +87,15 @@ export class GameManager {
           }
         }
 
-        // If in reveal, send reveal data
+        // If in reveal, send revealed chains
         if (game.state.phase === "reveal" || game.state.phase === "finished") {
-          const revealData = game.getRevealData();
-          for (const chain of revealData.chains) {
-            for (let i = 0; i < chain.entries.length; i++) {
-              const chainIdx = game.state.chains.indexOf(
-                game.state.chains.find((c) => c.originalPlayerId === chain.originalPlayerId)!
-              );
-              socket.emit(S2C.REVEAL_UPDATE, {
-                chainIndex: chainIdx,
-                entryIndex: i,
-                entry: chain.entries[i],
-                done: game.state.phase === "finished" &&
-                  chainIdx === game.state.chains.length - 1 &&
-                  i === chain.entries.length - 1,
-              });
-            }
+          const revealedChains = game.getRevealData();
+          for (const chainData of revealedChains) {
+            socket.emit(S2C.REVEAL_UPDATE, {
+              chainIndex: chainData.chainIndex,
+              entries: chainData.entries,
+              done: chainData.done,
+            });
           }
           if (game.state.phase === "finished") {
             socket.emit(S2C.GAME_FINISHED);
@@ -189,13 +181,12 @@ export class GameManager {
       const player = game.state.players.get(socket.id);
       if (!player?.isHost) return;
 
-      const result = game.revealNext();
+      const result = game.revealChain();
       if (!result) return;
 
       this.io.to(game.state.gameId).emit(S2C.REVEAL_UPDATE, {
         chainIndex: result.chainIndex,
-        entryIndex: result.entryIndex,
-        entry: result.entry,
+        entries: result.entries,
         done: result.done,
       });
 

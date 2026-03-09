@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { getSocket } from "@/lib/socket";
-import type { PlayerInfo, AssignmentData, RevealEntry, Difficulty, ClientPhase } from "@/lib/types";
+import type { PlayerInfo, AssignmentData, RevealChainData, Difficulty, ClientPhase } from "@/lib/types";
 
 export function useSocket(gameId?: string) {
   const [phase, setPhase] = useState<ClientPhase>(gameId ? "connecting" : "home");
@@ -10,7 +10,7 @@ export function useSocket(gameId?: string) {
   const [difficulty, setDifficulty] = useState<Difficulty>("simple");
   const [assignment, setAssignment] = useState<AssignmentData | null>(null);
   const [submittedCount, setSubmittedCount] = useState<{ count: number; total: number } | null>(null);
-  const [revealEntries, setRevealEntries] = useState<RevealEntry[]>([]);
+  const [revealedChains, setRevealedChains] = useState<RevealChainData[]>([]);
   const [isFinished, setIsFinished] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [myId, setMyId] = useState<string | null>(null);
@@ -108,8 +108,8 @@ export function useSocket(gameId?: string) {
       }
     });
 
-    socket.on("reveal-update", (data: RevealEntry) => {
-      setRevealEntries((prev) => [...prev, data]);
+    socket.on("reveal-update", (data: RevealChainData) => {
+      setRevealedChains((prev) => [...prev, data]);
       if (data.done) {
         setIsFinished(true);
       }
@@ -123,7 +123,7 @@ export function useSocket(gameId?: string) {
       setPhase("lobby");
       setAssignment(null);
       setSubmittedCount(null);
-      setRevealEntries([]);
+      setRevealedChains([]);
       setIsFinished(false);
     });
 
@@ -202,7 +202,7 @@ export function useSocket(gameId?: string) {
     difficulty,
     assignment,
     submittedCount,
-    revealEntries,
+    revealedChains,
     isFinished,
     error,
     myId,

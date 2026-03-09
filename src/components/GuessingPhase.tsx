@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import DrawingCanvas from "./DrawingCanvas";
 import Timer from "./Timer";
 import type { Stroke } from "@/lib/types";
@@ -15,6 +15,11 @@ interface GuessingPhaseProps {
 
 export default function GuessingPhase({ drawingData, duration, round, totalRounds, onSubmit }: GuessingPhaseProps) {
   const [guess, setGuess] = useState("");
+  const guessRef = useRef(guess);
+  guessRef.current = guess;
+  const submittedRef = useRef(false);
+  const onSubmitRef = useRef(onSubmit);
+  onSubmitRef.current = onSubmit;
 
   let strokes: Stroke[] = [];
   try {
@@ -23,9 +28,12 @@ export default function GuessingPhase({ drawingData, duration, round, totalRound
     // empty drawing
   }
 
-  const handleSubmit = useCallback(() => {
-    onSubmit(guess.trim() || "???");
-  }, [guess, onSubmit]);
+  const doSubmit = useCallback(() => {
+    if (submittedRef.current) return;
+    submittedRef.current = true;
+    onSubmitRef.current(guessRef.current.trim() || "???");
+  }, []);
+
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4">
@@ -33,7 +41,7 @@ export default function GuessingPhase({ drawingData, duration, round, totalRound
         <span className="text-sm text-gray-400">
           Round {round}/{totalRounds}
         </span>
-        <Timer duration={duration} onExpire={handleSubmit} />
+        <Timer duration={duration} onExpire={doSubmit} />
       </div>
 
       <div className="text-center">
@@ -49,12 +57,12 @@ export default function GuessingPhase({ drawingData, duration, round, totalRound
           value={guess}
           onChange={(e) => setGuess(e.target.value)}
           maxLength={100}
-          onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+          onKeyDown={(e) => e.key === "Enter" && doSubmit()}
           className="flex-1 rounded-lg border border-gray-700 bg-gray-900 px-4 py-3 text-white placeholder-gray-500 focus:border-blue-500 focus:outline-none"
           autoFocus
         />
         <button
-          onClick={handleSubmit}
+          onClick={doSubmit}
           className="rounded-lg bg-green-600 px-6 py-3 font-bold text-white transition hover:bg-green-700"
         >
           Submit

@@ -26,10 +26,9 @@ export interface AssignmentData {
   duration: number;
 }
 
-export interface RevealEntry {
+export interface RevealChainData {
   chainIndex: number;
-  entryIndex: number;
-  entry: ChainEntry;
+  entries: ChainEntry[];
   done: boolean;
 }
 

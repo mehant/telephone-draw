@@ -18,7 +18,7 @@ export default function GamePage({ params }: { params: Promise<{ gameId: string 
     difficulty,
     assignment,
     submittedCount,
-    revealEntries,
+    revealedChains,
     isFinished,
     error,
     myId,
@@ -112,7 +112,7 @@ export default function GamePage({ params }: { params: Promise<{ gameId: string 
 
       {(phase === "reveal" || phase === "finished") && (
         <RevealPhase
-          entries={revealEntries}
+          revealedChains={revealedChains}
           isHost={isHost}
           isFinished={isFinished}
           onRevealNext={revealNext}

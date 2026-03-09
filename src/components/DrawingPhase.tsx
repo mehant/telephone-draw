@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useCallback } from "react";
+import { useRef, useCallback, useEffect } from "react";
 import DrawingCanvas from "./DrawingCanvas";
 import Timer from "./Timer";
 import type { Stroke } from "@/lib/types";
@@ -15,14 +15,22 @@ interface DrawingPhaseProps {
 
 export default function DrawingPhase({ prompt, duration, round, totalRounds, onSubmit }: DrawingPhaseProps) {
   const strokesRef = useRef<Stroke[]>([]);
+  const getStrokesRef = useRef<(() => Stroke[]) | null>(null);
+  const submittedRef = useRef(false);
+  const onSubmitRef = useRef(onSubmit);
+  onSubmitRef.current = onSubmit;
 
   const handleStrokesChange = useCallback((strokes: Stroke[]) => {
     strokesRef.current = strokes;
   }, []);
 
-  const handleSubmit = useCallback(() => {
-    onSubmit(JSON.stringify(strokesRef.current));
-  }, [onSubmit]);
+  const doSubmit = useCallback(() => {
+    if (submittedRef.current) return;
+    submittedRef.current = true;
+    const allStrokes = getStrokesRef.current ? getStrokesRef.current() : strokesRef.current;
+    onSubmitRef.current(JSON.stringify(allStrokes));
+  }, []);
+
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4">
@@ -30,7 +38,7 @@ export default function DrawingPhase({ prompt, duration, round, totalRounds, onS
         <span className="text-sm text-gray-400">
           Round {round}/{totalRounds}
         </span>
-        <Timer duration={duration} onExpire={handleSubmit} />
+        <Timer duration={duration} onExpire={doSubmit} />
       </div>
 
       <div className="text-center">
@@ -38,10 +46,10 @@ export default function DrawingPhase({ prompt, duration, round, totalRounds, onS
         <p className="text-3xl font-bold text-blue-400">{prompt}</p>
       </div>
 
-      <DrawingCanvas onStrokesChange={handleStrokesChange} />
+      <DrawingCanvas onStrokesChange={handleStrokesChange} getStrokesRef={getStrokesRef} />
 
       <button
-        onClick={handleSubmit}
+        onClick={doSubmit}
         className="w-full rounded-lg bg-green-600 py-3 text-lg font-bold text-white transition hover:bg-green-700"
       >
         Submit Drawing

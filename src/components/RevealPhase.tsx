@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState, useEffect } from "react";
 import DrawingCanvas from "./DrawingCanvas";
-import type { RevealEntry, PlayerInfo, Stroke } from "@/lib/types";
+import type { RevealChainData, ChainEntry, PlayerInfo, Stroke } from "@/lib/types";
 
 interface RevealPhaseProps {
-  entries: RevealEntry[];
+  revealedChains: RevealChainData[];
   isHost: boolean;
   isFinished: boolean;
   onRevealNext: () => void;
@@ -13,56 +13,73 @@ interface RevealPhaseProps {
   players: PlayerInfo[];
 }
 
-export default function RevealPhase({ entries, isHost, isFinished, onRevealNext, onPlayAgain, players }: RevealPhaseProps) {
-  // Group entries by chain
-  const chains = useMemo(() => {
-    const map = new Map<number, RevealEntry[]>();
-    for (const entry of entries) {
-      const arr = map.get(entry.chainIndex) || [];
-      arr.push(entry);
-      map.set(entry.chainIndex, arr);
-    }
-    return map;
-  }, [entries]);
+export default function RevealPhase({ revealedChains, isHost, isFinished, onRevealNext, onPlayAgain, players }: RevealPhaseProps) {
+  const [currentViewIndex, setCurrentViewIndex] = useState(0);
 
-  const currentChainIndex = entries.length > 0 ? entries[entries.length - 1].chainIndex : 0;
+  // Auto-advance to newest chain when host reveals it
+  useEffect(() => {
+    if (revealedChains.length > 0) {
+      setCurrentViewIndex(revealedChains.length - 1);
+    }
+  }, [revealedChains.length]);
+
+  const currentChain = revealedChains[currentViewIndex];
+  const totalChains = players.length;
+  const canGoPrevious = currentViewIndex > 0;
+  const canGoNext = currentViewIndex < revealedChains.length - 1;
+  const isOnLastRevealed = revealedChains.length === 0 || currentViewIndex === revealedChains.length - 1;
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-4">
       <div className="text-center">
         <h2 className="text-3xl font-bold">The Reveal</h2>
-        <p className="text-gray-400">
-          Chain {currentChainIndex + 1} of {players.length}
-        </p>
+        {revealedChains.length > 0 && (
+          <p className="text-gray-400">
+            Chain {currentViewIndex + 1} of {totalChains}
+          </p>
+        )}
       </div>
 
       {/* Show current chain's entries */}
-      {Array.from(chains.entries()).map(([chainIdx, chainEntries]) => (
-        <div key={chainIdx} className={`space-y-3 ${chainIdx !== currentChainIndex && !isFinished ? "hidden" : ""}`}>
-          {chainIdx !== currentChainIndex && isFinished && (
-            <div className="border-t border-gray-700 pt-4 mt-4">
-              <p className="text-center text-sm text-gray-500 mb-3">Chain {chainIdx + 1}</p>
-            </div>
-          )}
-          {chainEntries.map((re, idx) => (
-            <RevealCard key={`${chainIdx}-${idx}`} entry={re} />
+      {currentChain && (
+        <div className="space-y-3">
+          {currentChain.entries.map((entry, idx) => (
+            <RevealCard key={`${currentChain.chainIndex}-${idx}`} entry={entry} />
           ))}
         </div>
-      ))}
+      )}
 
-      {entries.length === 0 && (
+      {revealedChains.length === 0 && (
         <p className="text-center text-gray-400">
           {isHost ? "Click the button below to start the reveal!" : "Waiting for the host to start the reveal..."}
         </p>
       )}
 
       <div className="flex justify-center gap-4">
-        {isHost && !isFinished && (
+        {canGoPrevious && (
+          <button
+            onClick={() => setCurrentViewIndex((i) => i - 1)}
+            className="rounded-lg bg-gray-700 px-6 py-3 text-lg font-bold text-white transition hover:bg-gray-600"
+          >
+            Previous
+          </button>
+        )}
+
+        {canGoNext && (
+          <button
+            onClick={() => setCurrentViewIndex((i) => i + 1)}
+            className="rounded-lg bg-gray-700 px-6 py-3 text-lg font-bold text-white transition hover:bg-gray-600"
+          >
+            Next
+          </button>
+        )}
+
+        {isHost && !isFinished && isOnLastRevealed && (
           <button
             onClick={onRevealNext}
             className="rounded-lg bg-blue-600 px-8 py-3 text-lg font-bold text-white transition hover:bg-blue-700"
           >
-            {entries.length === 0 ? "Start Reveal" : "Next"}
+            {revealedChains.length === 0 ? "Start Reveal" : "Next Chain"}
           </button>
         )}
 
@@ -79,23 +96,21 @@ export default function RevealPhase({ entries, isHost, isFinished, onRevealNext,
   );
 }
 
-function RevealCard({ entry }: { entry: RevealEntry }) {
-  const e = entry.entry;
-
-  if (e.type === "word") {
+function RevealCard({ entry }: { entry: ChainEntry }) {
+  if (entry.type === "word") {
     return (
       <div className="rounded-lg bg-gray-800 p-4 text-center">
-        <p className="text-xs text-gray-500 mb-1">{e.playerName}&apos;s word</p>
-        <p className="text-2xl font-bold text-blue-400">{e.content}</p>
+        <p className="text-xs text-gray-500 mb-1">{entry.playerName}&apos;s word</p>
+        <p className="text-2xl font-bold text-blue-400">{entry.content}</p>
       </div>
     );
   }
 
-  if (e.type === "guess") {
+  if (entry.type === "guess") {
     return (
       <div className="rounded-lg bg-gray-800 p-4 text-center">
-        <p className="text-xs text-gray-500 mb-1">{e.playerName} guessed</p>
-        <p className="text-2xl font-bold text-yellow-400">{e.content}</p>
+        <p className="text-xs text-gray-500 mb-1">{entry.playerName} guessed</p>
+        <p className="text-2xl font-bold text-yellow-400">{entry.content}</p>
       </div>
     );
   }
@@ -103,14 +118,14 @@ function RevealCard({ entry }: { entry: RevealEntry }) {
   // Drawing
   let strokes: Stroke[] = [];
   try {
-    strokes = JSON.parse(e.content);
+    strokes = JSON.parse(entry.content);
   } catch {
     // empty
   }
 
   return (
     <div className="rounded-lg bg-gray-800 p-4">
-      <p className="text-xs text-gray-500 mb-2 text-center">{e.playerName} drew</p>
+      <p className="text-xs text-gray-500 mb-2 text-center">{entry.playerName} drew</p>
       <DrawingCanvas readOnly initialStrokes={strokes} />
     </div>
   );

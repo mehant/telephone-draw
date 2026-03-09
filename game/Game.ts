@@ -19,7 +19,6 @@ export class Game {
       roundStartTime: 0,
       roundDuration: 60,
       revealChainIndex: 0,
-      revealEntryIndex: 0,
     };
   }
 
@@ -127,10 +126,12 @@ export class Game {
     this.submittedThisRound = new Set();
 
     if (this.roundTimer) clearTimeout(this.roundTimer);
+    // Grace period: wait a few extra seconds beyond what clients are told,
+    // so client-side timers fire first and can submit before auto-submit kicks in.
     this.roundTimer = setTimeout(() => {
       this.autoSubmitMissing();
       this.onRoundEnd?.();
-    }, this.state.roundDuration * 1000);
+    }, (this.state.roundDuration + 3) * 1000);
   }
 
   isDrawingRound(): boolean {
@@ -230,7 +231,6 @@ export class Game {
       // Game is over, go to reveal
       this.state.phase = "reveal";
       this.state.revealChainIndex = 0;
-      this.state.revealEntryIndex = 0;
       return false; // no more rounds
     }
 
@@ -238,54 +238,37 @@ export class Game {
     return true; // more rounds to play
   }
 
-  revealNext(): { chainIndex: number; entryIndex: number; entry: ChainEntry; done: boolean } | null {
+  revealChain(): { chainIndex: number; entries: ChainEntry[]; done: boolean } | null {
     if (this.state.phase !== "reveal") return null;
 
     const chain = this.state.chains[this.state.revealChainIndex];
     if (!chain) return null;
 
-    const entry = chain.entries[this.state.revealEntryIndex];
-    if (!entry) return null;
-
     const result = {
       chainIndex: this.state.revealChainIndex,
-      entryIndex: this.state.revealEntryIndex,
-      entry,
+      entries: chain.entries,
       done: false,
     };
 
-    // Advance to next entry
-    this.state.revealEntryIndex++;
-    if (this.state.revealEntryIndex >= chain.entries.length) {
-      // Move to next chain
-      this.state.revealChainIndex++;
-      this.state.revealEntryIndex = 0;
-
-      if (this.state.revealChainIndex >= this.state.chains.length) {
-        this.state.phase = "finished";
-        result.done = true;
-      }
+    this.state.revealChainIndex++;
+    if (this.state.revealChainIndex >= this.state.chains.length) {
+      this.state.phase = "finished";
+      result.done = true;
     }
 
     return result;
   }
 
-  getRevealData(): { chains: Chain[]; currentChain: number; currentEntry: number } {
-    return {
-      chains: this.state.chains.map((chain, ci) => ({
-        ...chain,
-        entries: chain.entries.slice(
-          0,
-          ci < this.state.revealChainIndex
-            ? chain.entries.length
-            : ci === this.state.revealChainIndex
-              ? this.state.revealEntryIndex
-              : 0
-        ),
-      })),
-      currentChain: this.state.revealChainIndex,
-      currentEntry: this.state.revealEntryIndex,
-    };
+  getRevealData(): { chainIndex: number; entries: ChainEntry[]; done: boolean }[] {
+    const revealed: { chainIndex: number; entries: ChainEntry[]; done: boolean }[] = [];
+    for (let i = 0; i < this.state.revealChainIndex; i++) {
+      revealed.push({
+        chainIndex: i,
+        entries: this.state.chains[i].entries,
+        done: this.state.phase === "finished" && i === this.state.chains.length - 1,
+      });
+    }
+    return revealed;
   }
 
   resetToLobby(): void {
@@ -298,7 +281,6 @@ export class Game {
     this.state.currentRound = 0;
     this.state.totalRounds = 0;
     this.state.revealChainIndex = 0;
-    this.state.revealEntryIndex = 0;
     this.submittedThisRound = new Set();
   }
 

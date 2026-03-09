@@ -10,9 +10,10 @@ interface DrawingCanvasProps {
   onStrokesChange?: (strokes: Stroke[]) => void;
   readOnly?: boolean;
   initialStrokes?: Stroke[];
+  getStrokesRef?: React.MutableRefObject<(() => Stroke[]) | null>;
 }
 
-export default function DrawingCanvas({ onStrokesChange, readOnly = false, initialStrokes }: DrawingCanvasProps) {
+export default function DrawingCanvas({ onStrokesChange, readOnly = false, initialStrokes, getStrokesRef }: DrawingCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [strokes, setStrokes] = useState<Stroke[]>(initialStrokes || []);
@@ -21,6 +22,24 @@ export default function DrawingCanvas({ onStrokesChange, readOnly = false, initi
   const [brushSize, setBrushSize] = useState(6);
   const [isDrawing, setIsDrawing] = useState(false);
   const [canvasSize, setCanvasSize] = useState({ width: 600, height: 600 });
+
+  // Expose a getter that includes in-progress stroke
+  const strokesStateRef = useRef(strokes);
+  const currentStrokeRef = useRef(currentStroke);
+  strokesStateRef.current = strokes;
+  currentStrokeRef.current = currentStroke;
+
+  useEffect(() => {
+    if (getStrokesRef) {
+      getStrokesRef.current = () => {
+        const all = [...strokesStateRef.current];
+        if (currentStrokeRef.current && currentStrokeRef.current.points.length >= 1) {
+          all.push(currentStrokeRef.current);
+        }
+        return all;
+      };
+    }
+  }, [getStrokesRef]);
 
   // Resize canvas to fit container
   useEffect(() => {
@@ -47,17 +66,26 @@ export default function DrawingCanvas({ onStrokesChange, readOnly = false, initi
 
     const allStrokes = currentStroke ? [...strokes, currentStroke] : strokes;
     for (const stroke of allStrokes) {
-      if (stroke.points.length < 2) continue;
+      if (stroke.points.length === 0) continue;
       ctx.strokeStyle = stroke.color;
       ctx.lineWidth = stroke.brushSize;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
-      ctx.beginPath();
-      ctx.moveTo(stroke.points[0].x * width, stroke.points[0].y * height);
-      for (let i = 1; i < stroke.points.length; i++) {
-        ctx.lineTo(stroke.points[i].x * width, stroke.points[i].y * height);
+      if (stroke.points.length === 1) {
+        // Single click — draw a dot
+        const p = stroke.points[0];
+        ctx.beginPath();
+        ctx.arc(p.x * width, p.y * height, stroke.brushSize / 2, 0, Math.PI * 2);
+        ctx.fillStyle = stroke.color;
+        ctx.fill();
+      } else {
+        ctx.beginPath();
+        ctx.moveTo(stroke.points[0].x * width, stroke.points[0].y * height);
+        for (let i = 1; i < stroke.points.length; i++) {
+          ctx.lineTo(stroke.points[i].x * width, stroke.points[i].y * height);
+        }
+        ctx.stroke();
       }
-      ctx.stroke();
     }
   }, [strokes, currentStroke, canvasSize]);
 

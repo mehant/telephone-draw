@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useSocket } from "@/hooks/useSocket";
 
 export default function HomePage() {
@@ -88,6 +89,12 @@ export default function HomePage() {
           {error && (
             <p className="text-center text-sm text-red-400">{error}</p>
           )}
+
+          <div className="text-center">
+            <Link href="/about" className="text-sm text-gray-500 hover:text-gray-300 transition">
+              How does this game work?
+            </Link>
+          </div>
         </div>
       </div>
     </div>

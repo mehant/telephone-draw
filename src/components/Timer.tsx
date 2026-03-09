@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 interface TimerProps {
   duration: number;
@@ -9,6 +9,8 @@ interface TimerProps {
 
 export default function Timer({ duration, onExpire }: TimerProps) {
   const [remaining, setRemaining] = useState(duration);
+  const onExpireRef = useRef(onExpire);
+  onExpireRef.current = onExpire;
 
   useEffect(() => {
     setRemaining(duration);
@@ -16,14 +18,15 @@ export default function Timer({ duration, onExpire }: TimerProps) {
       setRemaining((prev) => {
         if (prev <= 1) {
           clearInterval(interval);
-          onExpire?.();
+          // Call onExpire outside the state updater via ref
+          setTimeout(() => onExpireRef.current?.(), 0);
           return 0;
         }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(interval);
-  }, [duration, onExpire]);
+  }, [duration]);
 
   const pct = (remaining / duration) * 100;
   const urgent = remaining <= 10;
