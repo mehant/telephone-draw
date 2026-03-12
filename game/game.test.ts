@@ -48,7 +48,7 @@ function simulateGame(playerCount: number): Game {
 function runTests() {
   console.log("=== Game Chain Tests ===\n");
 
-  for (const playerCount of [3, 4, 5, 6, 7]) {
+  for (const playerCount of [2, 3, 4, 5, 6, 7]) {
     console.log(`\n--- ${playerCount} players ---`);
 
     const game = simulateGame(playerCount);
@@ -87,10 +87,11 @@ function runTests() {
       }
     }
 
-    // Verify no player works on their own chain
+    // Verify no player works on their own chain (except n=2 where it's unavoidable)
     for (const chain of game.state.chains) {
       const originalPlayer = chain.originalPlayerId;
       for (let j = 1; j < chain.entries.length; j++) {
+        if (playerCount === 2) continue; // self-assignment unavoidable with 2 players
         assert(
           chain.entries[j].playerId !== originalPlayer,
           `Chain by ${originalPlayer}: entry ${j} not by original player`

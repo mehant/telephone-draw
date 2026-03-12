@@ -85,13 +85,14 @@ export class Game {
 
   startGame(onRoundEnd: () => void): boolean {
     if (this.state.phase !== "lobby") return false;
-    if (this.state.players.size < 3) return false;
+    if (this.state.players.size < 2) return false;
 
     this.onRoundEnd = onRoundEnd;
     const n = this.state.players.size;
-    // Must be even so the game always ends on a guess round,
-    // otherwise chains end with a drawing that nobody interprets.
-    this.state.totalRounds = n % 2 === 0 ? n - 2 : n - 1;
+    // Must be even so the game always ends on a guess round.
+    // For even n > 2, use n-2 to prevent the original player from guessing their own word.
+    // For n=2, self-assignment is unavoidable but the game still works.
+    this.state.totalRounds = n === 2 ? 2 : n % 2 === 0 ? n - 2 : n - 1;
     this.state.phase = "playing";
 
     // Initialize chains - one per player
