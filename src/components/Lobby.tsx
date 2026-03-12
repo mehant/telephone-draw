@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { posthog } from "@/lib/posthog";
 import type { PlayerInfo, Difficulty } from "@/lib/types";
 import PlayerList from "./PlayerList";
 
@@ -107,7 +108,7 @@ export default function Lobby({
             </div>
 
             <button
-              onClick={onStart}
+              onClick={() => { posthog.capture("start_game_clicked", { player_count: players.length, difficulty }); onStart(); }}
               disabled={players.length < 2}
               className="w-full rounded-xl bg-green-600 py-4 text-lg font-bold text-white transition hover:bg-green-700 disabled:cursor-not-allowed disabled:opacity-40"
             >

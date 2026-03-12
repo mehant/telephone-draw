@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import DrawingCanvas from "./DrawingCanvas";
+import { posthog } from "@/lib/posthog";
 import type { RevealChainData, ChainEntry, PlayerInfo, Stroke } from "@/lib/types";
 
 interface RevealPhaseProps {
@@ -22,6 +23,11 @@ export default function RevealPhase({ revealedChains, isHost, isFinished, onReve
       setCurrentViewIndex(revealedChains.length - 1);
     }
   }, [revealedChains.length]);
+
+  // Track when reveal phase is viewed
+  useEffect(() => {
+    posthog.capture("reveal_phase_viewed");
+  }, []);
 
   const currentChain = revealedChains[currentViewIndex];
   const totalChains = players.length;
@@ -85,7 +91,7 @@ export default function RevealPhase({ revealedChains, isHost, isFinished, onReve
 
         {isHost && isFinished && (
           <button
-            onClick={onPlayAgain}
+            onClick={() => { posthog.capture("play_again_clicked"); onPlayAgain(); }}
             className="rounded-lg bg-green-600 px-8 py-3 text-lg font-bold text-white transition hover:bg-green-700"
           >
             Play Again

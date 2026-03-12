@@ -10,6 +10,7 @@
   "dependencies": {
     "nanoid": "^5.0.9",
     "next": "^15.1.0",
+    "posthog-js": "^1.360.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "socket.io": "^4.8.1",

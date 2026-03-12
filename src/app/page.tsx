@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useSocket } from "@/hooks/useSocket";
+import { posthog } from "@/lib/posthog";
 
 export default function HomePage() {
   const router = useRouter();
@@ -16,6 +17,7 @@ export default function HomePage() {
   const handleCreate = async () => {
     if (!name.trim()) return;
     setLoading(true);
+    posthog.capture("create_game_clicked");
     const gameId = await createGame(name.trim());
     router.push(`/game/${gameId}`);
   };
