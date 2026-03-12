@@ -87,15 +87,15 @@ function runTests() {
       }
     }
 
-    // Verify no player works on their own chain (except n=2 where it's unavoidable)
+    // Verify no player appears twice in game entries (entries 1+, excluding the initial word prompt)
     for (const chain of game.state.chains) {
-      const originalPlayer = chain.originalPlayerId;
+      const seen = new Set<string>();
       for (let j = 1; j < chain.entries.length; j++) {
-        if (playerCount === 2) continue; // self-assignment unavoidable with 2 players
         assert(
-          chain.entries[j].playerId !== originalPlayer,
-          `Chain by ${originalPlayer}: entry ${j} not by original player`
+          !seen.has(chain.entries[j].playerId),
+          `Chain by ${chain.originalPlayerId}: player ${chain.entries[j].playerId} appears twice in game entries`
         );
+        seen.add(chain.entries[j].playerId);
       }
     }
 
