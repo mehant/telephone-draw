@@ -91,11 +91,12 @@ function runTests() {
     for (const chain of game.state.chains) {
       const seen = new Set<string>();
       for (let j = 1; j < chain.entries.length; j++) {
+        const pid = chain.entries[j].playerId;
         assert(
-          !seen.has(chain.entries[j].playerId),
-          `Chain by ${chain.originalPlayerId}: player ${chain.entries[j].playerId} appears twice in game entries`
+          !seen.has(pid),
+          `Chain by ${chain.originalPlayerId}: player ${pid} appears twice in game entries`
         );
-        seen.add(chain.entries[j].playerId);
+        seen.add(pid);
       }
     }
 
