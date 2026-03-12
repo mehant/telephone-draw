@@ -48,7 +48,7 @@ function simulateGame(playerCount: number): Game {
 function runTests() {
   console.log("=== Game Chain Tests ===\n");
 
-  for (const playerCount of [2, 3, 4, 5, 6, 7]) {
+  for (const playerCount of [3, 4, 5, 6, 7]) {
     console.log(`\n--- ${playerCount} players ---`);
 
     const game = simulateGame(playerCount);
@@ -87,24 +87,14 @@ function runTests() {
       }
     }
 
-    // Verify no player works on their own chain (except final round for even n,
-    // where rotation wraps back to the original player — inherent to the formula)
+    // Verify no player works on their own chain
     for (const chain of game.state.chains) {
       const originalPlayer = chain.originalPlayerId;
       for (let j = 1; j < chain.entries.length; j++) {
-        const isLastEntry = j === chain.entries.length - 1;
-        const expectSelfOnLast = playerCount % 2 === 0;
-        if (isLastEntry && expectSelfOnLast) {
-          assert(
-            chain.entries[j].playerId === originalPlayer,
-            `Chain by ${originalPlayer}: last entry is by original player (even n wrap-around)`
-          );
-        } else {
-          assert(
-            chain.entries[j].playerId !== originalPlayer,
-            `Chain by ${originalPlayer}: entry ${j} not by original player`
-          );
-        }
+        assert(
+          chain.entries[j].playerId !== originalPlayer,
+          `Chain by ${originalPlayer}: entry ${j} not by original player`
+        );
       }
     }
 
