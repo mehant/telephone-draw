@@ -89,7 +89,9 @@ export class Game {
 
     this.onRoundEnd = onRoundEnd;
     const n = this.state.players.size;
-    this.state.totalRounds = n; // each player contributes to each chain once
+    // Must be even so the game always ends on a guess round,
+    // otherwise chains end with a drawing that nobody interprets.
+    this.state.totalRounds = n % 2 === 0 ? n : n - 1;
     this.state.phase = "playing";
 
     // Initialize chains - one per player
