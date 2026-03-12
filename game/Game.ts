@@ -90,9 +90,7 @@ export class Game {
     this.onRoundEnd = onRoundEnd;
     const n = this.state.players.size;
     // Must be even so the game always ends on a guess round.
-    // For even n > 2, use n-2 to prevent the original player from guessing their own word.
-    // For n=2, each player draws their own word and the other guesses.
-    this.state.totalRounds = n <= 2 ? 2 : n % 2 === 0 ? n - 2 : n - 1;
+    this.state.totalRounds = n % 2 === 0 ? n : n - 1;
     this.state.phase = "playing";
 
     // Initialize chains - one per player
@@ -149,14 +147,8 @@ export class Game {
 
     const n = this.state.players.size;
     const round = this.state.currentRound;
-    let chainIndex: number;
-    if (n === 2) {
-      // 2 players: draw your own word (round 1), guess the other's (round 2)
-      chainIndex = round === 1 ? player.order : (player.order + 1) % 2;
-    } else {
-      // Player at order p handles chain (p - round + N) % N in this round
-      chainIndex = ((player.order - round % n) + n) % n;
-    }
+    // Round 1: player draws their own word. Subsequent rounds rotate to other chains.
+    const chainIndex = ((player.order - (round - 1)) % n + n) % n;
     const chain = this.state.chains[chainIndex];
     const lastEntry = chain.entries[chain.entries.length - 1];
 
