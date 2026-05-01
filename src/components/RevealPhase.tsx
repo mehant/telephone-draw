@@ -24,6 +24,11 @@ export default function RevealPhase({ revealedChains, isHost, isFinished, onReve
     }
   }, [revealedChains.length]);
 
+  // Scroll to top whenever the viewed chain changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [currentViewIndex]);
+
   // Track when reveal phase is viewed
   useEffect(() => {
     posthog.capture("reveal_phase_viewed");
