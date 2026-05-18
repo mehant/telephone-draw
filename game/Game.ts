@@ -207,9 +207,8 @@ export class Game {
     return this.submittedThisRound.size;
   }
 
-  private autoSubmitMissing(): void {
-    const connected = Array.from(this.state.players.values()).filter((p) => p.connected);
-    for (const player of connected) {
+  autoSubmitMissing(): void {
+    for (const player of this.state.players.values()) {
       if (!this.submittedThisRound.has(player.id)) {
         if (this.isDrawingRound()) {
           this.submitDrawing(player.id, "[]"); // empty drawing
@@ -221,6 +220,9 @@ export class Game {
   }
 
   advanceRound(): boolean {
+    // Auto-submit for any players who haven't submitted (e.g., disconnected players)
+    this.autoSubmitMissing();
+
     if (this.roundTimer) {
       clearTimeout(this.roundTimer);
       this.roundTimer = null;

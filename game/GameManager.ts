@@ -216,6 +216,11 @@ export class GameManager {
 
       this.io.to(game.state.gameId).emit(S2C.PLAYER_LIST, game.getPlayerList());
 
+      // If during gameplay, check if all remaining connected players have submitted
+      if (!removed && game.state.phase === "playing" && game.hasAllSubmitted()) {
+        this.advanceRound(game);
+      }
+
       if (removed && game.state.players.size === 0) {
         game.destroy();
         this.games.delete(game.state.gameId);
